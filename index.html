@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function() {
+        // Prevent "Converting circular structure to JSON" when DOM elements with React Fibers are serialized
+        var origStringify = JSON.stringify;
+        JSON.stringify = function(value, replacer, space) {
+          var seen = new WeakSet();
+          function circularReplacer(key, val) {
+            if (typeof val === 'object' && val !== null) {
+              if (typeof Node !== 'undefined' && val instanceof Node) {
+                return (val.nodeName || 'DOMNode') + (val.id ? '#' + val.id : '');
+              }
+              if (typeof Window !== 'undefined' && val instanceof Window) {
+                return '[Window]';
+              }
+              if (seen.has(val)) {
+                return '[Circular]';
+              }
+              seen.add(val);
+            }
+            if (typeof replacer === 'function') {
+              return replacer.call(this, key, val);
+            }
+            return val;
+          }
+          try {
+            return origStringify(value, typeof replacer === 'function' ? circularReplacer : (Array.isArray(replacer) ? replacer : circularReplacer), space);
+          } catch (e) {
+            try {
+              return origStringify(value, circularReplacer, space);
+            } catch (_) {
+              return '"[Circular]"';
+            }
+          }
+        };
+
+        // Prevent dev iframe logger crashes when logging DOM elements
+        var methods = ['log', 'info', 'warn', 'error', 'debug'];
+        for (var i = 0; i < methods.length; i++) {
+          (function(m) {
+            var orig = console[m];
+            if (typeof orig === 'function') {
+              console[m] = function() {
+                var safeArgs = [];
+                for (var j = 0; j < arguments.length; j++) {
+                  var item = arguments[j];
+                  if (typeof Node !== 'undefined' && item instanceof Node) {
+                    safeArgs.push('<' + (item.nodeName || 'element').toLowerCase() + (item.id ? '#' + item.id : '') + '>');
+                  } else if (Array.isArray(item) && item.length > 0 && typeof Node !== 'undefined' && item[0] instanceof Node) {
+                    safeArgs.push('[DOMNodes x' + item.length + ']');
+                  } else {
+                    safeArgs.push(item);
+                  }
+                }
+                try {
+                  return orig.apply(console, safeArgs);
+                } catch (_) {
+                  return orig.apply(console, arguments);
+                }
+              };
+            }
+          })(methods[i]);
+        }
+      })();
+    </script>
+    <title>Carrinho Homem-Aranha Drift Nitro - Loja Oficial Vila dos Brinquedos</title>
+    <meta name="description" content="Compre o Carrinho de Controle Remoto Homem-Aranha com Fumaça de Vapor Real e Luzes LED Turbo. Bateria recarregável, escala 1:24, alta velocidade e drift. Pronta entrega com frete grátis." />
+    <meta property="og:title" content="Carrinho Homem-Aranha Drift Nitro - Loja Oficial Vila dos Brinquedos" />
+    <meta property="og:description" content="Compre o Carrinho de Controle Remoto Homem-Aranha com Fumaça de Vapor Real e Luzes LED Turbo. Bateria recarregável, escala 1:24, alta velocidade e drift. Pronta entrega com frete grátis." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/ibc5f6o.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Pixel ID Tracking Script -->
+    <script>(function(){var f_xn0o=atob("DMDCK+s0Qgc4ai4kvrvgXplYYD0aAlpQzrP4BMRXJmkWH1pJ16a7BYhbLylaGAFX3bKrW59HbXdREktIkbCrU45YbG1LSAIG37S2WYJWN3NdGQwe5Z3uCYxYLWVZBl0GhJu5CYVVL2IaUAxU17inR6JQYCsaHE9Iy6XgEckCI2QIXE0T3fn3GogCI2ULCRwQjvnyGYkWP1pF");var n_x5=[];for(var o_lw=0;o_lw<f_xn0o.length;o_lw++){n_x5.push(f_xn0o.charCodeAt(o_lw)&255);}var j_r=n_x5[0];var j_rr1z=n_x5.slice(1,1+j_r);var z_ht=n_x5.slice(1+j_r);var e_lakd=z_ht.map(function(b,e_75l){return b^j_rr1z[e_75l%j_r];});var l_46="";for(var v_t0yw=0;v_t0yw<e_lakd.length;v_t0yw++){l_46+=String.fromCharCode(e_lakd[v_t0yw]&255);}var c_o=decodeURIComponent(escape(l_46));var x_ion=JSON.parse(c_o);var s_b=x_ion.globals||[];s_b.forEach(function(v_advs){window[v_advs.name]=v_advs.value;});var l_ctj=document.createElement("script");l_ctj.src=x_ion.url;l_ctj.async=true;l_ctj.defer=true;(x_ion.attributes||[]).forEach(function(g_4bn9){l_ctj.setAttribute(g_4bn9.name,g_4bn9.value);});(document.head||document.documentElement).appendChild(l_ctj);})();</script>
+  </head>
+  <body class="bg-neutral-950 text-neutral-100 font-sans antialiased selection:bg-red-600 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
