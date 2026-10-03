@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CartItem } from '../types/product';
-import { X, Check, QrCode, Copy, CheckCircle2, ArrowLeft, Clock, Sparkles, RefreshCw, AlertCircle, ShieldCheck, MapPin } from 'lucide-react';
+import { CartItem, CustomerOrder } from '../types/product';
+import { X, Check, QrCode, Copy, CheckCircle2, ArrowLeft, ArrowRight, Clock, Sparkles, RefreshCw, AlertCircle, ShieldCheck, MapPin } from 'lucide-react';
 import {
   createDynamicPixOrder,
   DynamicPixResponse,
@@ -14,7 +14,7 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: CartItem[];
-  onOrderSuccess: () => void;
+  onOrderSuccess: (order: CustomerOrder) => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -26,6 +26,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [step, setStep] = useState<'shipping' | 'pix' | 'confirmed'>('shipping');
   const [copiedPix, setCopiedPix] = useState(false);
   const [isGeneratingPix, setIsGeneratingPix] = useState(false);
+  const [isPaymentDetected, setIsPaymentDetected] = useState(false);
   const [pixData, setPixData] = useState<DynamicPixResponse | null>(null);
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
   const [isLoadingCep, setIsLoadingCep] = useState(false);
@@ -208,10 +209,57 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
   };
 
-  const handleConfirmPaid = () => {
-    setStep('confirmed');
-    onOrderSuccess();
+  const goToCustomerPortal = () => {
+    const newOrder: CustomerOrder = {
+      orderId: `SPID-${Math.floor(10000 + Math.random() * 90000)}`,
+      createdAt: new Date().toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+      status: 'PAGO_PIX',
+      estimatedDispatch: 'Em até 5 dias úteis',
+      trackingCode: `BR${Math.floor(100000000 + Math.random() * 900000000)}SP`,
+      customer: {
+        name: customer.name || 'Cliente',
+        cpf: customer.cpf || '000.000.000-00',
+        phone: customer.phone || '(11) 99999-9999',
+        email: customer.email || 'cliente@email.com',
+        address: customer.address || '',
+        number: number || 'S/N',
+        complement: complement || '',
+        neighborhood: neighborhood || 'Centro',
+        city: customer.city || 'São Paulo',
+        state: customer.state || 'SP',
+        zipCode: customer.zipCode || '01001-000',
+      },
+      items,
+      total,
+      pixTxid: pixData?.txid,
+    };
+
+    onOrderSuccess(newOrder);
   };
+
+  // Automatic PIX payment detection simulation
+  useEffect(() => {
+    if (step !== 'pix') {
+      setIsPaymentDetected(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setIsPaymentDetected(true);
+      const redirectTimer = setTimeout(() => {
+        goToCustomerPortal();
+      }, 1400);
+      return () => clearTimeout(redirectTimer);
+    }, 6000);
+
+    return () => clearTimeout(timer);
+  }, [step]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4">
@@ -581,16 +629,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <li>Confirme o valor de <strong className="text-emerald-400">R$ {pixData.amount.toFixed(2).replace('.', ',')}</strong></li>
                   </ol>
                 </div>
-
-                {/* Confirm Paid Trigger */}
-                <button
-                  type="button"
-                  onClick={handleConfirmPaid}
-                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-950/60 transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>JÁ PAGUEI VIA PIX</span>
-                </button>
               </div>
 
               {/* API Integration Notice */}
@@ -613,7 +651,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   Pedido Recebido com Sucesso!
                 </h3>
                 <p className="text-xs text-neutral-300 mt-1 max-w-sm mx-auto">
-                  Seu Carrinho Homem-Aranha já foi registrado e será despachado via Envio Expresso.
+                  Seu Carrinho Homem-Aranha já foi registrado e será despachado via Envio Expresso em até 5 dias úteis.
                 </p>
               </div>
 
@@ -627,6 +665,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-neutral-800 pb-1.5">
+                  <span className="text-neutral-400">Prazo de Envio:</span>
+                  <span className="text-emerald-400 font-bold">
+                    Até 5 dias úteis
+                  </span>
+                </div>
+                <div className="flex justify-between border-b border-neutral-800 pb-1.5">
                   <span className="text-neutral-400">Destinatário:</span>
                   <span className="text-white font-medium">{customer.name || 'Cliente'}</span>
                 </div>
@@ -636,21 +680,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     R$ {total.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-400">Código de Rastreio:</span>
-                  <span className="text-amber-400 font-mono font-bold">
-                    BR{Math.floor(100000000 + Math.random() * 900000000)}SP
-                  </span>
-                </div>
               </div>
 
-              <div className="pt-1">
+              <div className="pt-1 flex flex-col gap-2 max-w-xs mx-auto">
+                <button
+                  type="button"
+                  onClick={goToCustomerPortal}
+                  className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-colors cursor-pointer shadow-md shadow-red-900/40 flex items-center justify-center gap-1.5"
+                >
+                  <span>Abrir Aba de Clientes</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-colors cursor-pointer"
+                  className="w-full py-2 px-4 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white font-semibold text-xs border border-neutral-800 transition-colors cursor-pointer"
                 >
-                  Fechar Janela e Acompanhar
+                  Fechar Janela
                 </button>
               </div>
             </div>

@@ -1,13 +1,21 @@
 import React from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Package } from 'lucide-react';
 
 interface HeaderProps {
   cartCount: number;
   onOpenCart: () => void;
   onBuyNowClick: () => void;
+  onOpenCustomerPortal?: () => void;
+  hasActiveOrder?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart, onBuyNowClick }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  cartCount, 
+  onOpenCart, 
+  onBuyNowClick,
+  onOpenCustomerPortal,
+  hasActiveOrder = false
+}) => {
   return (
     <header className="sticky top-0 z-40 bg-neutral-950/95 backdrop-blur-md border-b border-neutral-800">
       {/* Strict Top Bar Contract: 3 Zones */}
@@ -29,17 +37,41 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart, onBuyNowC
         </a>
 
         {/* Zone 2: 4-6 clean text navigation links */}
-        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-neutral-300">
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-300">
           <a href="#galeria" className="hover:text-white transition-colors">Galeria</a>
           <a href="#recursos" className="hover:text-white transition-colors">Recursos</a>
           <a href="#como-funciona" className="hover:text-white transition-colors">Como Funciona</a>
           <a href="#ficha-tecnica" className="hover:text-white transition-colors">Ficha Técnica</a>
           <a href="#o-que-vem" className="hover:text-white transition-colors">Na Caixa</a>
           <a href="#avaliacoes" className="hover:text-white transition-colors">Avaliações</a>
+          {onOpenCustomerPortal && (
+            <button
+              onClick={onOpenCustomerPortal}
+              className="text-neutral-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-semibold text-xs bg-neutral-900/80 hover:bg-neutral-800 px-2.5 py-1 rounded-full border border-neutral-800"
+            >
+              <span>Aba de Clientes</span>
+              {hasActiveOrder && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              )}
+            </button>
+          )}
         </nav>
 
         {/* Zone 3: Primary Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {onOpenCustomerPortal && (
+            <button
+              onClick={onOpenCustomerPortal}
+              title="Aba de Clientes • Acompanhar Pedido"
+              className="relative p-2.5 text-neutral-200 hover:text-white rounded-lg hover:bg-neutral-900 border border-neutral-800 transition-colors flex items-center gap-1.5 cursor-pointer md:hidden"
+            >
+              <Package className="w-4 h-4 text-emerald-400" />
+              {hasActiveOrder && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              )}
+            </button>
+          )}
+
           <button
             onClick={onOpenCart}
             aria-label="Abrir carrinho de compras"
@@ -56,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, onOpenCart, onBuyNowC
 
           <button
             onClick={onBuyNowClick}
-            className="px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-red-600 hover:bg-red-500 active:scale-[0.98] rounded-lg shadow-sm shadow-red-900/40 transition-all cursor-pointer whitespace-nowrap"
+            className="px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-red-600 hover:bg-red-500 active:scale-[0.98] rounded-lg shadow-sm shadow-red-900/40 transition-all cursor-pointer whitespace-nowrap"
           >
             Comprar Agora
           </button>

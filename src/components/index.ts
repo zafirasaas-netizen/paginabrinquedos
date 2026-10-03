@@ -11,4 +11,5 @@ export { FAQSection } from './FAQSection';
 export { MidPageCta, FinalPageCta } from './CtaBanners';
 export { CartDrawer } from './CartDrawer';
 export { CheckoutModal } from './CheckoutModal';
+export { CustomerPortal } from './CustomerPortal';
 export { Footer } from './Footer';

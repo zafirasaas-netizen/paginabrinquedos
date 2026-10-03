@@ -12,10 +12,11 @@ import { FAQSection } from './components/FAQSection';
 import { MidPageCta, FinalPageCta } from './components/CtaBanners';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
+import { CustomerPortal } from './components/CustomerPortal';
 import { Footer } from './components/Footer';
 
 import { PRODUCT_IMAGES, PRODUCT_PACKAGES } from './data/productData';
-import { CartItem } from './types/product';
+import { CartItem, CustomerOrder } from './types/product';
 import { Check, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export default function App() {
@@ -33,6 +34,14 @@ export default function App() {
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isCustomerPortalOpen, setIsCustomerPortalOpen] = useState(false);
+  const [activeOrder, setActiveOrder] = useState<CustomerOrder | null>(() => {
+    try {
+      const saved = localStorage.getItem('spiderman_customer_order');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -114,8 +123,17 @@ export default function App() {
     setIsCheckoutOpen(true);
   };
 
-  const handleOrderSuccess = () => {
+  const handleOrderSuccess = (order: CustomerOrder) => {
+    setActiveOrder(order);
+    try {
+      localStorage.setItem('spiderman_customer_order', JSON.stringify(order));
+    } catch (e) {
+      console.warn('Erro ao salvar pedido:', e);
+    }
     setCartItems([]);
+    setIsCheckoutOpen(false);
+    setIsCustomerPortalOpen(true);
+    showToast('Pagamento confirmado! Acompanhe seu pedido na Aba de Clientes.');
   };
 
   const scrollToOffer = () => {
@@ -144,6 +162,8 @@ export default function App() {
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
         onBuyNowClick={() => handleBuyNow('single')}
+        onOpenCustomerPortal={() => setIsCustomerPortalOpen(true)}
+        hasActiveOrder={Boolean(activeOrder)}
       />
 
       {/* Main PDP Container (Baseline 1440px viewport presence) */}
@@ -241,6 +261,17 @@ export default function App() {
         onClose={() => setIsCheckoutOpen(false)}
         items={cartItems}
         onOrderSuccess={handleOrderSuccess}
+      />
+
+      {/* Aba de Clientes Modal */}
+      <CustomerPortal
+        isOpen={isCustomerPortalOpen}
+        onClose={() => setIsCustomerPortalOpen(false)}
+        order={activeOrder}
+        onBackToShop={() => {
+          setIsCustomerPortalOpen(false);
+          scrollToOffer();
+        }}
       />
     </div>
   );

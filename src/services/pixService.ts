@@ -105,6 +105,7 @@ export async function createDynamicPixOrder({
   orderRef?: string;
   items?: any[];
 }): Promise<DynamicPixResponse> {
+  // 1. Try local Express proxy /api/pix/create
   try {
     const res = await fetch('/api/pix/create', {
       method: 'POST',
@@ -116,7 +117,7 @@ export async function createDynamicPixOrder({
         customer,
         orderRef,
         items,
-        description: 'Carrinho Homem-Aranha com Fumaça'
+        description: 'Carrinho Homem-Aranha Drift Nitro'
       }),
     });
 
@@ -135,10 +136,71 @@ export async function createDynamicPixOrder({
       }
     }
   } catch (err) {
-    console.warn('Falha na chamada /api/pix/create, gerando PIX dinâmico local:', err);
+    console.warn('Falha na chamada /api/pix/create, tentando conexão direta com Masterfy:', err);
   }
 
-  // Fallback to local dynamic BACEN PIX generator
+  // 2. Direct Masterfy API call fallback (Supports static hostings like Netlify)
+  try {
+    const amountInCents = Math.round(amount * 100);
+    let cleanTaxId = (customer?.cpf || '').replace(/\D/g, '');
+    if (cleanTaxId.length !== 11) {
+      cleanTaxId = "52998224725";
+    }
+
+    const directRes = await fetch("https://api.masterfypagamentos.com/v1/payment", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer b7YlmPnibb-uLZweSkkouFkw2vHa5CvTrK2UtHgFUxo",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: amountInCents,
+        currency: "BRL",
+        method: "PIX",
+        description: "Carrinho Homem-Aranha Drift Nitro",
+        externalRef: orderRef || `spid_${Date.now()}`,
+        notificationUrl: "https://example.com/webhook/payment",
+        payer: {
+          name: customer?.name || "Cliente",
+          taxId: cleanTaxId,
+          email: customer?.email || "cliente@viladosbrinquedos.com.br",
+          phone: (customer?.phone || '').replace(/\D/g, '') || "11999999999",
+        },
+        items: [
+          {
+            quantity: 1,
+            name: "Carrinho Homem-Aranha Drift Nitro",
+            price: amountInCents,
+            type: "DIGITAL"
+          }
+        ]
+      }),
+    });
+
+    if (directRes.ok) {
+      const directData = await directRes.json();
+      const copypaste = directData.data?.copypaste;
+      if (copypaste) {
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(
+          copypaste
+        )}&margin=10&color=000000&bgcolor=FFFFFF`;
+
+        return {
+          id: directData.id,
+          txid: directData.id || orderRef || `VB${Date.now()}`,
+          pixCopiaECola: copypaste,
+          qrCodeUrl,
+          amount,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+          status: directData.status || 'PENDING'
+        };
+      }
+    }
+  } catch (directErr) {
+    console.warn('Falha na chamada direta à Masterfy, usando gerador dinâmico local:', directErr);
+  }
+
+  // 3. Fallback to local dynamic BACEN PIX generator
   const timestamp = Date.now().toString(36).toUpperCase();
   const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
   const txid = `VB${timestamp}${randomSuffix}`;
@@ -162,6 +224,33 @@ export async function createDynamicPixOrder({
     expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     status: 'PENDING'
   };
+}
+
+/**
+ * Checks payment status on Masterfy
+ */
+export async function checkPixPaymentStatus(id: string): Promise<string> {
+  try {
+    const res = await fetch(`/api/pix/status/${id}`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.status || 'PENDING';
+    }
+  } catch {}
+
+  try {
+    const res = await fetch(`https://api.masterfypagamentos.com/v1/payment/${id}`, {
+      headers: {
+        Authorization: "Bearer b7YlmPnibb-uLZweSkkouFkw2vHa5CvTrK2UtHgFUxo",
+      },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.status || 'PENDING';
+    }
+  } catch {}
+
+  return 'PENDING';
 }
 
 // Helpers for input masks and Brazilian tax ID formatting
