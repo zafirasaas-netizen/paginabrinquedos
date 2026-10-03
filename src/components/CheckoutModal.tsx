@@ -260,9 +260,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         hour: '2-digit',
         minute: '2-digit',
       }),
-      status: 'PAGO_PIX',
+      status: 'AGUARDANDO_PAGAMENTO',
       estimatedDispatch: 'Em até 5 dias úteis',
       trackingCode: `BR${Math.floor(100000000 + Math.random() * 900000000)}SP`,
+      pixCopiaECola: pixData?.pixCopiaECola,
+      qrCodeUrl: pixData?.qrCodeUrl,
       customer: {
         name: customer.name || 'Cliente',
         cpf: customer.cpf || '000.000.000-00',

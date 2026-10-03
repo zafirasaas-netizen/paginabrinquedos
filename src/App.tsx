@@ -279,6 +279,14 @@ export default function App() {
         isOpen={isCustomerPortalOpen}
         onClose={() => setIsCustomerPortalOpen(false)}
         order={activeOrder}
+        onUpdateOrder={(updated) => {
+          setActiveOrder(updated);
+          try {
+            localStorage.setItem('spiderman_customer_order', JSON.stringify(updated));
+          } catch (e) {
+            console.warn('Erro ao atualizar pedido:', e);
+          }
+        }}
         onBackToShop={() => {
           setIsCustomerPortalOpen(false);
           scrollToOffer();

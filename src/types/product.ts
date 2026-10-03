@@ -64,9 +64,12 @@ export interface ShippingCalculation {
 export interface CustomerOrder {
   orderId: string;
   createdAt: string;
-  status: 'PAGO_PIX' | 'SEPARACAO' | 'ENVIADO';
+  status: 'AGUARDANDO_PAGAMENTO' | 'PAGO_PIX' | 'SEPARACAO' | 'ENVIADO';
   estimatedDispatch: string;
   trackingCode: string;
+  approvedAt?: string;
+  pixCopiaECola?: string;
+  qrCodeUrl?: string;
   customer: {
     name: string;
     cpf: string;
