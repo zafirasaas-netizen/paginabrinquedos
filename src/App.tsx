@@ -32,6 +32,7 @@ export default function App() {
     }
   ]);
 
+  const [selectedPackageId, setSelectedPackageId] = useState<'single' | 'double' | 'triple'>('single');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCustomerPortalOpen, setIsCustomerPortalOpen] = useState(false);
@@ -161,7 +162,7 @@ export default function App() {
       <Header
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
-        onBuyNowClick={() => handleBuyNow('single')}
+        onBuyNowClick={scrollToOffer}
         onOpenCustomerPortal={() => setIsCustomerPortalOpen(true)}
         hasActiveOrder={Boolean(activeOrder)}
       />
@@ -178,6 +179,8 @@ export default function App() {
             {/* Right: Purchase Module (6 cols) */}
             <div id="oferta" className="lg:col-span-6 scroll-mt-24">
               <PurchaseModule
+                selectedPackageId={selectedPackageId}
+                onSelectPackage={setSelectedPackageId}
                 onAddToCart={handleAddToCart}
                 onBuyNow={handleBuyNow}
               />
@@ -217,33 +220,41 @@ export default function App() {
       <Footer />
 
       {/* Mobile Sticky Action Bar (capped at <= 15% height, single-line) */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-neutral-950/95 border-t border-neutral-800 p-3 backdrop-blur-md">
-        <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
-          <div>
-            <p className="text-[10px] text-neutral-400">A partir de</p>
-            <p className="text-base font-extrabold text-white tabular-nums leading-none">
-              R$ 49,90 <span className="text-[10px] text-emerald-400 font-bold">no Pix</span>
-            </p>
-          </div>
+      {(() => {
+        const currentPkg = PRODUCT_PACKAGES.find(p => p.id === selectedPackageId) || PRODUCT_PACKAGES[0];
+        return (
+          <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-neutral-950/95 border-t border-neutral-800 p-3 backdrop-blur-md">
+            <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
+              <div>
+                <p className="text-[10px] text-neutral-400 font-medium truncate max-w-[130px]">
+                  {selectedPackageId === 'single' ? '1x Unidade' : selectedPackageId === 'double' ? 'Kit 2 Carrinhos' : 'Kit Família (3x)'}
+                </p>
+                <p className="text-base font-extrabold text-white tabular-nums leading-none">
+                  R$ {currentPkg.price.toFixed(2).replace('.', ',')}{' '}
+                  <span className="text-[10px] text-emerald-400 font-bold">no Pix</span>
+                </p>
+              </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsCartOpen(true)}
-              aria-label="Abrir carrinho"
-              className="p-2.5 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-200 cursor-pointer"
-            >
-              <ShoppingBag className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => handleBuyNow('single')}
-              className="py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-red-900/40 cursor-pointer whitespace-nowrap"
-            >
-              <span>Comprar Agora</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsCartOpen(true)}
+                  aria-label="Abrir carrinho"
+                  className="p-2.5 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-200 cursor-pointer"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleBuyNow(selectedPackageId)}
+                  className="py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-500 active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-red-900/40 cursor-pointer whitespace-nowrap"
+                >
+                  <span>Comprar Agora</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Slide-out Cart Drawer */}
       <CartDrawer

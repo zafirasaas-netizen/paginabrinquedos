@@ -26,10 +26,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [step, setStep] = useState<'shipping' | 'pix' | 'confirmed'>('shipping');
   const [copiedPix, setCopiedPix] = useState(false);
   const [isGeneratingPix, setIsGeneratingPix] = useState(false);
-  const [isPaymentDetected, setIsPaymentDetected] = useState(false);
   const [pixData, setPixData] = useState<DynamicPixResponse | null>(null);
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  // Always reset modal state when opened
+  useEffect(() => {
+    if (isOpen) {
+      setStep('shipping');
+      setPixData(null);
+      setIsGeneratingPix(false);
+      setFormError(null);
+    }
+  }, [isOpen]);
 
   // Customer Form states (Loaded automatically from localStorage)
   const [customer, setCustomer] = useState<PixCustomerData>(() => {
@@ -97,8 +107,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       localStorage.setItem('checkout_saved_neighborhood', neighborhood);
     } catch {}
   }, [neighborhood]);
-
-  const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   // Close on Escape key
   useEffect(() => {
@@ -178,13 +186,45 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }
   };
 
+  const handleFillDemoData = () => {
+    setCustomer({
+      name: 'Marcos Vinicius Silva',
+      cpf: '529.982.247-25',
+      phone: '(11) 98765-4321',
+      email: 'marcos.silva@gmail.com',
+      address: 'Avenida Paulista',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01310-100',
+    });
+    setNumber('1500');
+    setComplement('Apto 42');
+    setNeighborhood('Bela Vista');
+    setFormError(null);
+  };
+
+  const effectiveItems = items && items.length > 0 ? items : [
+    {
+      id: 'pkg-single',
+      name: '1x Carrinho Homem-Aranha Drift Nitro (Escala 1:24)',
+      packageType: 'single' as const,
+      price: 49.90,
+      originalPrice: 99.90,
+      quantity: 1,
+      image: 'https://i.imgur.com/ibc5f6o.png'
+    }
+  ];
+
+  const total = effectiveItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
   const handleShippingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customer.name || !customer.phone || !customer.zipCode || !customer.address || !number) {
-      alert('Por favor, preencha os campos obrigatórios de entrega.');
+    if (!customer.name?.trim() || !customer.phone?.trim() || !customer.zipCode?.trim() || !customer.address?.trim() || !number?.trim()) {
+      setFormError('Por favor, preencha nome, WhatsApp, CEP, endereço e número para a entrega.');
       return;
     }
 
+    setFormError(null);
     setIsGeneratingPix(true);
     try {
       const dynamicPix = await createDynamicPixOrder({
@@ -193,7 +233,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           ...customer,
           address: `${customer.address}, ${number} ${complement ? '- ' + complement : ''}`
         },
-        items: items.map(item => ({
+        items: effectiveItems.map(item => ({
           name: item.name,
           price: item.price,
           quantity: item.quantity,
@@ -202,8 +242,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       });
       setPixData(dynamicPix);
       setStep('pix');
-    } catch {
-      alert('Erro ao gerar PIX. Tente novamente.');
+    } catch (err) {
+      console.warn('Erro ao gerar PIX:', err);
+      setFormError('Não foi possível gerar o PIX no momento. Tente novamente em instantes.');
     } finally {
       setIsGeneratingPix(false);
     }
@@ -235,31 +276,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         state: customer.state || 'SP',
         zipCode: customer.zipCode || '01001-000',
       },
-      items,
+      items: effectiveItems,
       total,
       pixTxid: pixData?.txid,
     };
 
     onOrderSuccess(newOrder);
   };
-
-  // Automatic PIX payment detection simulation
-  useEffect(() => {
-    if (step !== 'pix') {
-      setIsPaymentDetected(false);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setIsPaymentDetected(true);
-      const redirectTimer = setTimeout(() => {
-        goToCustomerPortal();
-      }, 1400);
-      return () => clearTimeout(redirectTimer);
-    }, 6000);
-
-    return () => clearTimeout(timer);
-  }, [step]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4">
@@ -629,6 +652,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <li>Confirme o valor de <strong className="text-emerald-400">R$ {pixData.amount.toFixed(2).replace('.', ',')}</strong></li>
                   </ol>
                 </div>
+
+                {/* Button to open Aba de Clientes after paying/copying */}
+                <button
+                  type="button"
+                  onClick={goToCustomerPortal}
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
+                >
+                  <span>Ver Meu Pedido na Aba de Clientes</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
 
               {/* API Integration Notice */}

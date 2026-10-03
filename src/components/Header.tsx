@@ -4,7 +4,7 @@ import { ShoppingBag, Package } from 'lucide-react';
 interface HeaderProps {
   cartCount: number;
   onOpenCart: () => void;
-  onBuyNowClick: () => void;
+  onBuyNowClick?: () => void;
   onOpenCustomerPortal?: () => void;
   hasActiveOrder?: boolean;
 }
@@ -12,7 +12,6 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ 
   cartCount, 
   onOpenCart, 
-  onBuyNowClick,
   onOpenCustomerPortal,
   hasActiveOrder = false
 }) => {
@@ -44,28 +43,18 @@ export const Header: React.FC<HeaderProps> = ({
           <a href="#ficha-tecnica" className="hover:text-white transition-colors">Ficha Técnica</a>
           <a href="#o-que-vem" className="hover:text-white transition-colors">Na Caixa</a>
           <a href="#avaliacoes" className="hover:text-white transition-colors">Avaliações</a>
-          {onOpenCustomerPortal && (
-            <button
-              onClick={onOpenCustomerPortal}
-              className="text-neutral-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-semibold text-xs bg-neutral-900/80 hover:bg-neutral-800 px-2.5 py-1 rounded-full border border-neutral-800"
-            >
-              <span>Aba de Clientes</span>
-              {hasActiveOrder && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              )}
-            </button>
-          )}
         </nav>
 
-        {/* Zone 3: Primary Actions */}
+        {/* Zone 3: Primary Actions (Carrinho & Área de Clientes) */}
         <div className="flex items-center gap-2 sm:gap-3">
           {onOpenCustomerPortal && (
             <button
               onClick={onOpenCustomerPortal}
-              title="Aba de Clientes • Acompanhar Pedido"
-              className="relative p-2.5 text-neutral-200 hover:text-white rounded-lg hover:bg-neutral-900 border border-neutral-800 transition-colors flex items-center gap-1.5 cursor-pointer md:hidden"
+              title="Área de Clientes • Acompanhar Pedido"
+              className="relative p-2 sm:px-3 sm:py-2 text-neutral-200 hover:text-white rounded-lg hover:bg-neutral-900 border border-neutral-800 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Package className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-semibold">Área de Clientes</span>
               {hasActiveOrder && (
                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
               )}
@@ -75,22 +64,15 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenCart}
             aria-label="Abrir carrinho de compras"
-            className="relative p-2.5 text-neutral-200 hover:text-white rounded-lg hover:bg-neutral-900 border border-neutral-800 transition-colors flex items-center gap-2 cursor-pointer"
+            className="relative p-2 sm:px-3 sm:py-2 text-neutral-200 hover:text-white rounded-lg hover:bg-neutral-900 border border-neutral-800 transition-colors flex items-center gap-2 cursor-pointer"
           >
-            <ShoppingBag className="w-5 h-5 text-neutral-300" />
+            <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-300" />
             <span className="hidden sm:inline text-xs font-medium">Carrinho</span>
             {cartCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg">
                 {cartCount}
               </span>
             )}
-          </button>
-
-          <button
-            onClick={onBuyNowClick}
-            className="px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-red-600 hover:bg-red-500 active:scale-[0.98] rounded-lg shadow-sm shadow-red-900/40 transition-all cursor-pointer whitespace-nowrap"
-          >
-            Comprar Agora
           </button>
         </div>
       </div>

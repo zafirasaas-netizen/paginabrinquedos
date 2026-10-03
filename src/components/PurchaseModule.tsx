@@ -5,10 +5,24 @@ import { PRODUCT_PACKAGES } from '../data/productData';
 interface PurchaseModuleProps {
   onAddToCart: (packageId: 'single' | 'double' | 'triple') => void;
   onBuyNow: (packageId: 'single' | 'double' | 'triple') => void;
+  selectedPackageId?: 'single' | 'double' | 'triple';
+  onSelectPackage?: (packageId: 'single' | 'double' | 'triple') => void;
 }
 
-export const PurchaseModule: React.FC<PurchaseModuleProps> = ({ onAddToCart, onBuyNow }) => {
-  const [selectedPackageId, setSelectedPackageId] = useState<'single' | 'double' | 'triple'>('single');
+export const PurchaseModule: React.FC<PurchaseModuleProps> = ({ 
+  onAddToCart, 
+  onBuyNow,
+  selectedPackageId: controlledPackageId,
+  onSelectPackage 
+}) => {
+  const [internalPackageId, setInternalPackageId] = useState<'single' | 'double' | 'triple'>('single');
+  const selectedPackageId = controlledPackageId ?? internalPackageId;
+
+  const handleSelectPackage = (id: 'single' | 'double' | 'triple') => {
+    setInternalPackageId(id);
+    onSelectPackage?.(id);
+  };
+
   const [cep, setCep] = useState('');
   const [shippingResult, setShippingResult] = useState<{
     calculated: boolean;
@@ -123,7 +137,7 @@ export const PurchaseModule: React.FC<PurchaseModuleProps> = ({ onAddToCart, onB
             return (
               <div
                 key={pkg.id}
-                onClick={() => setSelectedPackageId(pkg.id)}
+                onClick={() => handleSelectPackage(pkg.id)}
                 className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
                   isSelected
                     ? 'border-red-600 bg-neutral-900/90 shadow-xl ring-2 ring-red-600/30'
